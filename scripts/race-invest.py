@@ -21,21 +21,21 @@ N = int(sys.argv[1]) if len(sys.argv) > 1 else 10
 AMOUNT = int(sys.argv[2]) if len(sys.argv) > 2 else 100_000
 
 
-def req(method, path, token=None, idem=None, reauth=None, **kw):
+def req(method, path, session=None, idem=None, reauth=None, **kw):
     headers = {"Content-Type": "application/json"}
-    if token:
-        headers["Authorization"] = f"Bearer {token}"
     if idem:
         headers["Idempotency-Key"] = idem
     if reauth:
         headers["X-Reauth-Token"] = reauth
-    return requests.request(method, f"{API}{path}", headers=headers, **kw)
+    s = session or requests
+    return s.request(method, f"{API}{path}", headers=headers, **kw)
 
 
 def login(email, password):
-    r = req("POST", "/api/auth/login", json={"email": email, "password": password})
+    s = requests.Session()
+    r = req("POST", "/api/auth/login", s, json={"email": email, "password": password})
     assert r.status_code == 200, f"login {email}: {r.status_code}"
-    return r.json()["access_token"]
+    return s
 
 
 def make_user(i):
@@ -55,29 +55,29 @@ def make_user(i):
             ],
         },
     )
-    token = login(email, password)
+    sess = login(email, password)
     req(
         "POST",
         "/api/auth/identity/verify",
-        token,
+        sess,
         json={"carrier": "SKT", "name": name, "birth": "19950101", "phone": f"010{i + 10**7:08d}"},
     )
     req(
         "POST",
         "/api/suitability-test",
-        token,
+        sess,
         json={"answers": [{"seq": s, "choice": c} for s, c in zip(range(1, 7), "XOOXOO")]},
     )
     r = req(
         "POST",
         "/api/deposit/notify-intent",
-        token,
+        sess,
         idem=uuid.uuid4().hex,
         json={"sender_name": name, "amount": AMOUNT * 2},
     )
     req("POST", "/mockbank/deposits/execute", json={"intent_id": r.json()["intent_id"]})
-    r = req("POST", "/api/auth/reauth", token, json={"password": password})
-    return {"token": token, "reauth": r.json()["reauth_token"], "idem": uuid.uuid4().hex}
+    r = req("POST", "/api/auth/reauth", sess, json={"password": password})
+    return {"sess": sess, "reauth": r.json()["reauth_token"], "idem": uuid.uuid4().hex}
 
 
 def attempt(user, product_id):
@@ -86,8 +86,8 @@ def attempt(user, product_id):
         reauth=user["reauth"],
         json={"product_id": product_id, "amount": AMOUNT, "confirm": "네"},
     )
-    r = req("POST", "/api/investments", user["token"], **kw)
-    replay = req("POST", "/api/investments", user["token"], **kw)
+    r = req("POST", "/api/investments", user["sess"], **kw)
+    replay = req("POST", "/api/investments", user["sess"], **kw)
     return r, replay
 
 

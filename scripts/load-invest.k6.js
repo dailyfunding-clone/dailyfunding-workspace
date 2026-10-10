@@ -22,17 +22,22 @@ const invested = new Counter("invest_created");
 const overSold = new Counter("oversell_detected");
 const idemReplays = new Counter("idempotent_replay_same_id");
 
-const json = (t) => ({
+const json = (cookie) => ({
   headers: {
     "Content-Type": "application/json",
-    ...(t ? { Authorization: `Bearer ${t}` } : {}),
+    ...(cookie ? { Cookie: cookie } : {}),
   },
 });
 
 const login = (email, password) => {
   const r = http.post(`${API}/api/auth/login`, JSON.stringify({ email, password }), json(null, ""));
   if (r.status !== 200) fail(`login ${email}: ${r.status}`);
-  return r.json("access_token");
+  const parts = [];
+  for (const name of ["access", "refresh"]) {
+    const c = r.cookies[name];
+    if (c && c[0]) parts.push(`${name}=${c[0].value}`);
+  }
+  return parts.join("; ");
 };
 
 export const options = {
@@ -80,7 +85,7 @@ export function setup() {
     const intent = http.post(
       `${API}/api/deposit/notify-intent`,
       JSON.stringify({ sender_name: `케이유저${i}`, amount: AMOUNT * 2 }),
-      { headers: { "Content-Type": "application/json", Authorization: `Bearer ${t}`, "Idempotency-Key": uuidv4() } }
+      { headers: { "Content-Type": "application/json", Cookie: t, "Idempotency-Key": uuidv4() } }
     );
     http.post(`${API}/mockbank/deposits/execute`, JSON.stringify({ intent_id: intent.json("intent_id") }), json(null, ""));
     const reauth = http.post(
@@ -98,7 +103,7 @@ export default function (data) {
   const body = JSON.stringify({ product_id: data.productId, amount: AMOUNT, confirm: "네" });
   const headers = {
     "Content-Type": "application/json",
-    Authorization: `Bearer ${u.token}`,
+    Cookie: u.token,
     "Idempotency-Key": u.idem,
     "X-Reauth-Token": u.reauth,
   };

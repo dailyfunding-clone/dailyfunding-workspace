@@ -35,13 +35,10 @@ race   [   0% ]
 Run    [ 100% ] setup()
 race   [   0% ]
 
-running (0m08.0s), 04/20 VUs, 16 complete and 0 interrupted iterations
-race   [  80% ] 20 VUs  0m00.3s/2m0s  16/20 iters, 1 per VU
-
 
   █ TOTAL RESULTS 
 
-    checks_total.......: 20     2.286518/s
+    checks_total.......: 20     2.75334/s
     checks_succeeded...: 75.00% 15 out of 20
     checks_failed......: 25.00% 5 out of 20
 
@@ -49,27 +46,27 @@ race   [  80% ] 20 VUs  0m00.3s/2m0s  16/20 iters, 1 per VU
       ↳  75% — ✓ 15 / ✗ 5
 
     CUSTOM
-    idempotent_replay_same_id......: 15     1.714888/s
-    invest_created.................: 15     1.714888/s
+    idempotent_replay_same_id......: 15     2.065005/s
+    invest_created.................: 15     2.065005/s
 
     HTTP
-    http_req_duration..............: avg=73.98ms  min=4.06ms  med=15.23ms max=1.04s    p(90)=121.15ms p(95)=131.78ms
-      { expected_response:true }...: avg=58.59ms  min=4.17ms  med=29.83ms max=218.14ms p(90)=118.6ms  p(95)=129.6ms 
+    http_req_duration..............: avg=50.95ms  min=3.78ms med=11.74ms  max=212.55ms p(90)=108.29ms p(95)=111.75ms
+      { expected_response:true }...: avg=54.96ms  min=3.92ms med=37.35ms  max=119.01ms p(90)=108.07ms p(95)=110.11ms
     http_req_failed................: 16.48% 30 out of 182
-    http_reqs......................: 182    20.80731/s
+    http_reqs......................: 182    25.05539/s
 
     EXECUTION
-    iteration_duration.............: avg=291.42ms min=50.82ms med=96.29ms max=1.05s    p(90)=1.05s    p(95)=1.05s   
-    iterations.....................: 20     2.286518/s
-    vus............................: 4      min=0         max=4 
+    iteration_duration.............: avg=113.59ms min=63.4ms med=107.92ms max=222.34ms p(90)=142.45ms p(95)=221.26ms
+    iterations.....................: 20     2.75334/s
+    vus............................: 0      min=0         max=0 
     vus_max........................: 20     min=20        max=20
 
     NETWORK
-    data_received..................: 103 kB 12 kB/s
-    data_sent......................: 148 kB 17 kB/s
+    data_received..................: 92 kB  13 kB/s
+    data_sent......................: 176 kB 24 kB/s
 
 
 
 
-running (0m08.7s), 00/20 VUs, 20 complete and 0 interrupted iterations
-race ✓ [ 100% ] 20 VUs  0m01.1s/2m0s  20/20 iters, 1 per VU
+running (0m07.3s), 00/20 VUs, 20 complete and 0 interrupted iterations
+race ✓ [ 100% ] 20 VUs  0m00.2s/2m0s  20/20 iters, 1 per VU
