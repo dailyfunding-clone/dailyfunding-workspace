@@ -23,6 +23,10 @@ AMOUNT = int(sys.argv[2]) if len(sys.argv) > 2 else 100_000
 
 def req(method, path, session=None, idem=None, reauth=None, **kw):
     headers = {"Content-Type": "application/json"}
+    if session is not None and method.upper() not in ("GET", "HEAD", "OPTIONS"):
+        csrf = session.cookies.get("csrf")
+        if csrf:
+            headers["X-CSRF-Token"] = csrf
     if idem:
         headers["Idempotency-Key"] = idem
     if reauth:
@@ -42,7 +46,7 @@ def make_user(i):
     email = f"race-{uuid.uuid4().hex[:8]}@test.com"
     password = "Test1234!"
     name = f"경합{i:02d}"
-    req(
+    r = req(
         "POST",
         "/api/auth/signup",
         json={
@@ -55,19 +59,27 @@ def make_user(i):
             ],
         },
     )
+    assert r.status_code == 201, f"signup {email}: {r.status_code} {r.text[:120]}"
     sess = login(email, password)
-    req(
+    r = req(
         "POST",
         "/api/auth/identity/verify",
         sess,
-        json={"carrier": "SKT", "name": name, "birth": "19950101", "phone": f"010{i + 10**7:08d}"},
+        json={
+            "carrier": "SKT",
+            "name": name,
+            "birth": "19950101",
+            "phone": f"010{uuid.uuid4().int % 10**8:08d}",
+        },
     )
-    req(
+    assert r.status_code == 200 and r.json().get("verified"), f"identity {email}: {r.status_code} {r.text[:120]}"
+    r = req(
         "POST",
         "/api/suitability-test",
         sess,
         json={"answers": [{"seq": s, "choice": c} for s, c in zip(range(1, 7), "XOOXOO")]},
     )
+    assert r.status_code == 200 and r.json().get("passed"), f"suitability {email}: {r.status_code} {r.text[:120]}"
     r = req(
         "POST",
         "/api/deposit/notify-intent",
@@ -75,8 +87,11 @@ def make_user(i):
         idem=uuid.uuid4().hex,
         json={"sender_name": name, "amount": AMOUNT * 2},
     )
-    req("POST", "/mockbank/deposits/execute", json={"intent_id": r.json()["intent_id"]})
+    assert r.status_code in (200, 201, 202), f"notify-intent {email}: {r.status_code} {r.text[:120]}"
+    r = req("POST", "/mockbank/deposits/execute", json={"intent_id": r.json()["intent_id"]})
+    assert r.status_code == 200 and r.json().get("delivered"), f"deposit execute {email}: {r.status_code} {r.text[:120]}"
     r = req("POST", "/api/auth/reauth", sess, json={"password": password})
+    assert r.status_code == 200, f"reauth {email}: {r.status_code} {r.text[:120]}"
     return {"sess": sess, "reauth": r.json()["reauth_token"], "idem": uuid.uuid4().hex}
 
 
