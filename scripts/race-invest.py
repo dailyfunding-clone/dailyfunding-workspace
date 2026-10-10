@@ -21,12 +21,14 @@ N = int(sys.argv[1]) if len(sys.argv) > 1 else 10
 AMOUNT = int(sys.argv[2]) if len(sys.argv) > 2 else 100_000
 
 
-def req(method, path, token=None, idem=None, **kw):
+def req(method, path, token=None, idem=None, reauth=None, **kw):
     headers = {"Content-Type": "application/json"}
     if token:
         headers["Authorization"] = f"Bearer {token}"
     if idem:
         headers["Idempotency-Key"] = idem
+    if reauth:
+        headers["X-Reauth-Token"] = reauth
     return requests.request(method, f"{API}{path}", headers=headers, **kw)
 
 
@@ -74,24 +76,18 @@ def make_user(i):
         json={"sender_name": name, "amount": AMOUNT * 2},
     )
     req("POST", "/mockbank/deposits/execute", json={"intent_id": r.json()["intent_id"]})
-    return {"token": token, "idem": uuid.uuid4().hex}
+    r = req("POST", "/api/auth/reauth", token, json={"password": password})
+    return {"token": token, "reauth": r.json()["reauth_token"], "idem": uuid.uuid4().hex}
 
 
 def attempt(user, product_id):
-    r = req(
-        "POST",
-        "/api/investments",
-        user["token"],
+    kw = dict(
         idem=user["idem"],
+        reauth=user["reauth"],
         json={"product_id": product_id, "amount": AMOUNT, "confirm": "네"},
     )
-    replay = req(
-        "POST",
-        "/api/investments",
-        user["token"],
-        idem=user["idem"],
-        json={"product_id": product_id, "amount": AMOUNT, "confirm": "네"},
-    )
+    r = req("POST", "/api/investments", user["token"], **kw)
+    replay = req("POST", "/api/investments", user["token"], **kw)
     return r, replay
 
 
@@ -133,7 +129,7 @@ id_mismatch = [
     (r, rp)
     for r, rp in results
     if r.status_code == 201
-    and rp.status_code == 201
+    and rp.status_code in (200, 201)
     and rp.json().get("investment_id") != r.json().get("investment_id")
 ]
 

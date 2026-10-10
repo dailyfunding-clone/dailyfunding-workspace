@@ -157,13 +157,17 @@ pid = r.json()["id"]
 r = req("PATCH", f"/api/admin/products/{pid}/status", admin, json={"status": "recruiting"})
 ok(r.status_code == 200 and r.json().get("status") == "recruiting", "product open", r.text[:100])
 
-# 6. 투자 (전액 → 자동 recruited)
+# 6. 투자 (전액 → 자동 recruited, reauth 게이트)
+r = req("POST", "/api/auth/reauth", token, json={"password": password})
+ok(r.status_code == 200, "reauth for invest", f"{r.status_code}")
+reauth = r.json()["reauth_token"]
+
 r = req(
     "POST",
     "/api/investments",
     token,
     json={"product_id": pid, "amount": target, "confirm": "네"},
-    headers={"Idempotency-Key": uuid.uuid4().hex},
+    headers={"Idempotency-Key": uuid.uuid4().hex, "X-Reauth-Token": reauth},
 )
 ok(r.status_code == 201, "invest", f"{r.status_code} {r.text[:150]}")
 inv_id = r.json()["investment_id"]

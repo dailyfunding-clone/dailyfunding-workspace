@@ -22,15 +22,12 @@ const invested = new Counter("invest_created");
 const overSold = new Counter("oversell_detected");
 const idemReplays = new Counter("idempotent_replay_same_id");
 
-const json = (t, b) => [
-  t ? `${API}${b}` : "",
-  {
-    headers: {
-      "Content-Type": "application/json",
-      ...(t ? { Authorization: `Bearer ${t}` } : {}),
-    },
+const json = (t) => ({
+  headers: {
+    "Content-Type": "application/json",
+    ...(t ? { Authorization: `Bearer ${t}` } : {}),
   },
-];
+});
 
 const login = (email, password) => {
   const r = http.post(`${API}/api/auth/login`, JSON.stringify({ email, password }), json(null, ""));
@@ -86,7 +83,12 @@ export function setup() {
       { headers: { "Content-Type": "application/json", Authorization: `Bearer ${t}`, "Idempotency-Key": uuidv4() } }
     );
     http.post(`${API}/mockbank/deposits/execute`, JSON.stringify({ intent_id: intent.json("intent_id") }), json(null, ""));
-    users.push({ token: t, idem: uuidv4() });
+    const reauth = http.post(
+      `${API}/api/auth/reauth`,
+      JSON.stringify({ password: "Test1234!" }),
+      json(t, "")
+    );
+    users.push({ token: t, reauth: reauth.json("reauth_token"), idem: uuidv4() });
   }
   return { users, productId, remaining };
 }
@@ -98,15 +100,16 @@ export default function (data) {
     "Content-Type": "application/json",
     Authorization: `Bearer ${u.token}`,
     "Idempotency-Key": u.idem,
+    "X-Reauth-Token": u.reauth,
   };
 
   const r1 = http.post(`${API}/api/investments`, body, { headers });
   if (check(r1, { "created": (r) => r.status === 201 })) invested.add(1);
-  if (r.status === 201 && r.json("amount") > data.remaining) overSold.add(1);
+  if (r1.status === 201 && r1.json("amount") > data.remaining) overSold.add(1);
 
   // 멱등 재시도: 같은 키 → 동일 investment_id
   const r2 = http.post(`${API}/api/investments`, body, { headers });
-  if (r1.status === 201 && r2.status === 201) {
+  if (r1.status === 201 && [200, 201].includes(r2.status)) {
     if (r2.json("investment_id") === r1.json("investment_id")) {
       idemReplays.add(1);
     } else {
