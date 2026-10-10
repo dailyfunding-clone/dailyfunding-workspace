@@ -33,6 +33,10 @@ def req(method, path, session=None, **kw):
     headers = kw.pop("headers", {})
     headers.setdefault("Content-Type", "application/json")
     s = session or requests
+    if session is not None and method.upper() not in ("GET", "HEAD", "OPTIONS"):
+        csrf = session.cookies.get("csrf")
+        if csrf:
+            headers.setdefault("X-CSRF-Token", csrf)
     return s.request(method, f"{API}{path}", headers=headers, **kw)
 
 
@@ -101,14 +105,6 @@ r = req(
     json={"bank_name": "국민은행", "account_no": "12345678901234", "holder": name},
     headers={"X-Reauth-Token": reauth},
 )
-if r.status_code in (404, 405):
-    r = req(
-        "POST",
-        "/api/deposit/linked-account",
-        sess,
-        json={"bank_name": "국민은행", "account_no": "12345678901234", "holder": name},
-        headers={"X-Reauth-Token": reauth},
-    )
 ok(r.status_code in (200, 201), "linked account", f"{r.status_code} {r.text[:100]}")
 
 # 4. 충전: 입금의사 → mockbank 실행 → 잔액 확인
@@ -130,7 +126,7 @@ r = req(
 ok(r.status_code == 200 and r.json().get("delivered"), "deposit webhook", r.text[:120])
 
 r = req("GET", "/api/deposit/account", sess)
-balance = r.json().get("balance") or r.json().get("deposit") or 0
+balance = r.json().get("deposit", 0)
 ok(r.status_code == 200 and balance >= 1_000_000, "deposit balance", f"balance={balance}")
 
 # 5. 관리자: 상품 생성 → 모집오픈
@@ -185,19 +181,22 @@ due = sched[0].get("due_date") or sched[0].get("pay_date")
 print(f"     due_date={due}")
 
 # 8. 시간 진행 + 상환 배치
+paid, detail = 0, ""
 for _ in range(40):
     r = req("POST", "/api/admin/batch/repay?date=" + str(due), admin)
     if r.status_code == 200 and r.json().get("paid", 0) > 0:
+        paid, detail = r.json()["paid"], r.text[:150]
         break
     r2 = req("POST", "/api/admin/time/advance", admin, json={"date": str(due)})
     if r2.status_code == 200:
+        paid, detail = r2.json().get("repay", {}).get("paid", 0), r2.text[:150]
         break
     due = (date.fromisoformat(due) + timedelta(days=1)).isoformat()
-ok(r.status_code == 200 and r.json().get("paid", 0) >= 1, "repay batch", r.text[:150])
+ok(paid >= 1, "repay batch", detail)
 
 # 9. 상환 후 잔액 → 전액 출금
 r = req("GET", "/api/deposit/account", sess)
-balance = r.json().get("balance") or r.json().get("deposit") or 0
+balance = r.json().get("deposit", 0)
 ok(balance > 500_000, "repaid balance", f"balance={balance}")
 
 r = req("POST", "/api/auth/reauth", sess, json={"password": password})
@@ -210,22 +209,23 @@ r = req(
     headers={"X-Reauth-Token": reauth, "Idempotency-Key": uuid.uuid4().hex},
 )
 ok(r.status_code in (200, 201, 202), "withdraw request", f"{r.status_code} {r.text[:120]}")
+withdrawal_id = r.json()["withdrawal_id"]
 
 # 출금 이체 실행 (mockbank)
-time.sleep(0.5)
-r = req("GET", "/mockbank/deliveries")
-transfers = [
-    d
-    for d in (r.json() if isinstance(r.json(), list) else r.json().get("results", []))
-    if d.get("payload", {}).get("type") == "transfer.requested"
-]
-if transfers:
-    tid = transfers[-1]["payload"].get("transfer_id")
-    r = req("POST", "/mockbank/transfers/execute", json={"transfer_id": tid, "success": True})
-    ok(r.status_code == 200, "transfer execute", r.text[:120])
+r = req(
+    "POST",
+    "/mockbank/transfers/execute",
+    json={"withdrawal_id": withdrawal_id, "success": True},
+)
+ok(r.status_code == 200 and r.json().get("delivered"), "transfer execute", r.text[:120])
 
-r = req("GET", "/api/deposit/account", sess)
-balance = r.json().get("balance") or r.json().get("deposit") or 0
-ok(balance < 1_000_000, "final balance", f"balance={balance}")
+balance = None
+for _ in range(20):
+    r = req("GET", "/api/deposit/account", sess)
+    balance = r.json().get("deposit", 0)
+    if balance < 1_000_000:
+        break
+    time.sleep(0.5)
+ok(balance is not None and balance < 1_000_000, "final balance", f"balance={balance}")
 
 print(f"\nALL PASS — lifecycle e2e ({step} steps)")

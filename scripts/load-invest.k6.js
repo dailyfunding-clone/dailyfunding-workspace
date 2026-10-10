@@ -16,28 +16,32 @@ const uuidv4 = () => crypto.randomUUID();
 const API = __ENV.API_BASE || "http://localhost:8000";
 const VUS = Number(__ENV.VUS || 20);
 const AMOUNT = Number(__ENV.AMOUNT || 100000);
-const ADMIN = { email: "admin@demo.local", password: "Admin1234!" };
 
 const invested = new Counter("invest_created");
-const overSold = new Counter("oversell_detected");
 const idemReplays = new Counter("idempotent_replay_same_id");
+const idemMismatch = new Counter("idempotent_replay_mismatch");
 
-const json = (cookie) => ({
+const json = (cookie, csrf) => ({
   headers: {
     "Content-Type": "application/json",
     ...(cookie ? { Cookie: cookie } : {}),
+    ...(csrf ? { "X-CSRF-Token": csrf } : {}),
   },
 });
 
 const login = (email, password) => {
-  const r = http.post(`${API}/api/auth/login`, JSON.stringify({ email, password }), json(null, ""));
+  const r = http.post(`${API}/api/auth/login`, JSON.stringify({ email, password }), json());
   if (r.status !== 200) fail(`login ${email}: ${r.status}`);
   const parts = [];
-  for (const name of ["access", "refresh"]) {
+  let csrf = "";
+  for (const name of ["access", "refresh", "csrf"]) {
     const c = r.cookies[name];
-    if (c && c[0]) parts.push(`${name}=${c[0].value}`);
+    if (c && c[0]) {
+      parts.push(`${name}=${c[0].value}`);
+      if (name === "csrf") csrf = c[0].value;
+    }
   }
-  return parts.join("; ");
+  return { cookie: parts.join("; "), csrf };
 };
 
 export const options = {
@@ -52,48 +56,63 @@ export const options = {
 };
 
 export function setup() {
-  const admin = login(ADMIN.email, ADMIN.password);
   const productId = Number(__ENV.PRODUCT_ID);
   const product = http.get(`${API}/api/products/${productId}`);
   if (product.status !== 200) fail(`product fetch: ${product.status}`);
-  const target = product.json("target_amount");
-  const remaining = product.json("remaining_amount") ?? target;
+  const remaining = product.json("remaining_amount") ?? product.json("target_amount");
 
   const users = [];
   for (let i = 0; i < VUS; i++) {
     const email = `k6-${Date.now()}-${i}@test.com`;
-    http.post(
+    const password = "Test1234!";
+    const name = `케이유저${i}`;
+    const signup = http.post(
       `${API}/api/auth/signup`,
       JSON.stringify({
         email,
-        password: "Test1234!",
-        name: `케이유저${i}`,
+        password,
+        name,
         agreements: ["service", "investment", "electronic_finance", "privacy", "credit_info"].map(
           (t) => ({ term: t, agreed: true })
         ),
       }),
-      json(null, "")
+      json()
     );
-    const t = login(email, "Test1234!");
-    http.post(
+    if (signup.status !== 201) fail(`signup ${email}: ${signup.status} ${signup.body}`);
+    const u = login(email, password);
+    const auth = json(u.cookie, u.csrf);
+    const ident = http.post(
       `${API}/api/auth/identity/verify`,
-      JSON.stringify({ carrier: "SKT", name: `케이유저${i}`, birth: "19950101", phone: `010${String(10000000 + i)}` }),
-      json(t, "")
+      JSON.stringify({ carrier: "SKT", name, birth: "19950101", phone: `010${String(10000000 + i)}` }),
+      auth
     );
+    if (ident.status !== 200 || !ident.json("verified")) {
+      fail(`identity ${email}: ${ident.status} ${ident.body}`);
+    }
     const answers = [1, 2, 3, 4, 5, 6].map((s, k) => ({ seq: s, choice: "XOOXOO"[k] }));
-    http.post(`${API}/api/suitability-test`, JSON.stringify({ answers }), json(t, ""));
+    const suit = http.post(`${API}/api/suitability-test`, JSON.stringify({ answers }), auth);
+    if (suit.status !== 200 || !suit.json("passed")) {
+      fail(`suitability ${email}: ${suit.status} ${suit.body}`);
+    }
     const intent = http.post(
       `${API}/api/deposit/notify-intent`,
-      JSON.stringify({ sender_name: `케이유저${i}`, amount: AMOUNT * 2 }),
-      { headers: { "Content-Type": "application/json", Cookie: t, "Idempotency-Key": uuidv4() } }
+      JSON.stringify({ sender_name: name, amount: AMOUNT * 2 }),
+      { headers: { ...auth.headers, "Idempotency-Key": uuidv4() } }
     );
-    http.post(`${API}/mockbank/deposits/execute`, JSON.stringify({ intent_id: intent.json("intent_id") }), json(null, ""));
-    const reauth = http.post(
-      `${API}/api/auth/reauth`,
-      JSON.stringify({ password: "Test1234!" }),
-      json(t, "")
+    if (![200, 201, 202].includes(intent.status)) {
+      fail(`intent ${email}: ${intent.status} ${intent.body}`);
+    }
+    const dep = http.post(
+      `${API}/mockbank/deposits/execute`,
+      JSON.stringify({ intent_id: intent.json("intent_id") }),
+      json()
     );
-    users.push({ token: t, reauth: reauth.json("reauth_token"), idem: uuidv4() });
+    if (dep.status !== 200) fail(`deposit execute ${email}: ${dep.status} ${dep.body}`);
+    const reauth = http.post(`${API}/api/auth/reauth`, JSON.stringify({ password }), auth);
+    if (reauth.status !== 200 || !reauth.json("reauth_token")) {
+      fail(`reauth ${email}: ${reauth.status} ${reauth.body}`);
+    }
+    users.push({ token: u.cookie, csrf: u.csrf, reauth: reauth.json("reauth_token"), idem: uuidv4() });
   }
   return { users, productId, remaining };
 }
@@ -104,13 +123,15 @@ export default function (data) {
   const headers = {
     "Content-Type": "application/json",
     Cookie: u.token,
+    "X-CSRF-Token": u.csrf,
     "Idempotency-Key": u.idem,
     "X-Reauth-Token": u.reauth,
   };
 
   const r1 = http.post(`${API}/api/investments`, body, { headers });
-  if (check(r1, { "created": (r) => r.status === 201 })) invested.add(1);
-  if (r1.status === 201 && r1.json("amount") > data.remaining) overSold.add(1);
+  // 201 성공과 409 경합 탈락 모두 기대 결과 — 그 외만 실패로 집계
+  check(r1, { "created or expected conflict": (r) => [201, 409].includes(r.status) });
+  if (r1.status === 201) invested.add(1);
 
   // 멱등 재시도: 같은 키 → 동일 investment_id
   const r2 = http.post(`${API}/api/investments`, body, { headers });
@@ -118,7 +139,15 @@ export default function (data) {
     if (r2.json("investment_id") === r1.json("investment_id")) {
       idemReplays.add(1);
     } else {
-      overSold.add(1);
+      idemMismatch.add(1);
     }
   }
+}
+
+export function teardown(data) {
+  const r = http.get(`${API}/api/products/${data.productId}`);
+  if (r.status !== 200) fail(`teardown product fetch: ${r.status}`);
+  const raised = r.json("raised_amount");
+  const target = r.json("target_amount");
+  if (raised > target) fail(`oversell: raised=${raised} target=${target}`);
 }
