@@ -1,6 +1,6 @@
-product 64: target=1,800,000 slots=18 racers=20
-preparing 20 users...
+product 75: target=800,000 slots=8 racers=10
+preparing 10 users...
 racing investments...
-created=18 conflicts=2 raised=1,800,000 target=1,800,000
+created=8 conflicts=2 raised=800,000 target=800,000
 idempotent replay mismatches=0
 RACE TEST PASS — oversell 0, idempotent replays consistent

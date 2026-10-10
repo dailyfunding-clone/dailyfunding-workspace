@@ -35,38 +35,400 @@ race   [   0% ]
 Run    [ 100% ] setup()
 race   [   0% ]
 
+Run    [ 100% ] setup()
+race   [   0% ]
+
+Run    [ 100% ] setup()
+race   [   0% ]
+
+Run    [ 100% ] setup()
+race   [   0% ]
+
+Run    [ 100% ] setup()
+race   [   0% ]
+
+Run    [ 100% ] setup()
+race   [   0% ]
+
+Run    [ 100% ] setup()
+race   [   0% ]
+
+Run    [ 100% ] setup()
+race   [   0% ]
+
+Run    [ 100% ] setup()
+race   [   0% ]
+
+Run    [ 100% ] setup()
+race   [   0% ]
+
+Run    [ 100% ] setup()
+race   [   0% ]
+
+Run    [ 100% ] setup()
+race   [   0% ]
+
+Run    [ 100% ] setup()
+race   [   0% ]
+
+Run    [ 100% ] setup()
+race   [   0% ]
+
+Run    [ 100% ] setup()
+race   [   0% ]
+
+Run    [ 100% ] setup()
+race   [   0% ]
+
+Run    [ 100% ] setup()
+race   [   0% ]
+
+Run    [ 100% ] setup()
+race   [   0% ]
+
+Run    [ 100% ] setup()
+race   [   0% ]
+
+Run    [ 100% ] setup()
+race   [   0% ]
+
+Run    [ 100% ] setup()
+race   [   0% ]
+
+Run    [ 100% ] setup()
+race   [   0% ]
+
+Run    [ 100% ] setup()
+race   [   0% ]
+
+Run    [ 100% ] setup()
+race   [   0% ]
+
+Run    [ 100% ] setup()
+race   [   0% ]
+
+Run    [ 100% ] setup()
+race   [   0% ]
+
+Run    [ 100% ] setup()
+race   [   0% ]
+
+Run    [ 100% ] setup()
+race   [   0% ]
+
+Run    [ 100% ] setup()
+race   [   0% ]
+
+Run    [ 100% ] setup()
+race   [   0% ]
+
+Run    [ 100% ] setup()
+race   [   0% ]
+
+Run    [ 100% ] setup()
+race   [   0% ]
+
+Run    [ 100% ] setup()
+race   [   0% ]
+
+Run    [ 100% ] setup()
+race   [   0% ]
+
+Run    [ 100% ] setup()
+race   [   0% ]
+
+Run    [ 100% ] setup()
+race   [   0% ]
+
+Run    [ 100% ] setup()
+race   [   0% ]
+
+Run    [ 100% ] setup()
+race   [   0% ]
+
+Run    [ 100% ] setup()
+race   [   0% ]
+
+Run    [ 100% ] setup()
+race   [   0% ]
+
+Run    [ 100% ] setup()
+race   [   0% ]
+
+Run    [ 100% ] setup()
+race   [   0% ]
+
+Run    [ 100% ] setup()
+race   [   0% ]
+
+Run    [ 100% ] setup()
+race   [   0% ]
+
+Run    [ 100% ] setup()
+race   [   0% ]
+
+Run    [ 100% ] setup()
+race   [   0% ]
+
+Run    [ 100% ] setup()
+race   [   0% ]
+
+Run    [ 100% ] setup()
+race   [   0% ]
+
+Run    [ 100% ] setup()
+race   [   0% ]
+
+Run    [ 100% ] setup()
+race   [   0% ]
+
+Run    [ 100% ] setup()
+race   [   0% ]
+
+Run    [ 100% ] setup()
+race   [   0% ]
+
+Run    [ 100% ] setup()
+race   [   0% ]
+
+Run    [ 100% ] setup()
+race   [   0% ]
+
+Run    [ 100% ] setup()
+race   [   0% ]
+
+Run    [ 100% ] setup()
+race   [   0% ]
+
+Run    [ 100% ] setup()
+race   [   0% ]
+
+Run    [ 100% ] setup()
+race   [   0% ]
+
+Run    [ 100% ] setup()
+race   [   0% ]
+
+Run    [ 100% ] setup()
+race   [   0% ]
+
+Run    [ 100% ] setup()
+race   [   0% ]
+
+Run    [ 100% ] setup()
+race   [   0% ]
+
+Run    [ 100% ] setup()
+race   [   0% ]
+
+Run    [ 100% ] setup()
+race   [   0% ]
+
+Run    [ 100% ] setup()
+race   [   0% ]
+
+Run    [ 100% ] setup()
+race   [   0% ]
+
+Run    [ 100% ] setup()
+race   [   0% ]
+
+Run    [ 100% ] setup()
+race   [   0% ]
+
+Run    [ 100% ] setup()
+race   [   0% ]
+
+Run    [ 100% ] setup()
+race   [   0% ]
+
+Run    [ 100% ] setup()
+race   [   0% ]
+
+Run    [ 100% ] setup()
+race   [   0% ]
+
+Run    [ 100% ] setup()
+race   [   0% ]
+
+Run    [ 100% ] setup()
+race   [   0% ]
+
+Run    [ 100% ] setup()
+race   [   0% ]
+
+Run    [ 100% ] setup()
+race   [   0% ]
+
+Run    [ 100% ] setup()
+race   [   0% ]
+
+Run    [ 100% ] setup()
+race   [   0% ]
+
+Run    [ 100% ] setup()
+race   [   0% ]
+
+Run    [ 100% ] setup()
+race   [   0% ]
+
+Run    [ 100% ] setup()
+race   [   0% ]
+
+Run    [ 100% ] setup()
+race   [   0% ]
+
+Run    [ 100% ] setup()
+race   [   0% ]
+
+Run    [ 100% ] setup()
+race   [   0% ]
+
+Run    [ 100% ] setup()
+race   [   0% ]
+
+Run    [ 100% ] setup()
+race   [   0% ]
+
+Run    [ 100% ] setup()
+race   [   0% ]
+
+Run    [ 100% ] setup()
+race   [   0% ]
+
+Run    [ 100% ] setup()
+race   [   0% ]
+
+Run    [ 100% ] setup()
+race   [   0% ]
+
+Run    [ 100% ] setup()
+race   [   0% ]
+
+Run    [ 100% ] setup()
+race   [   0% ]
+
+Run    [ 100% ] setup()
+race   [   0% ]
+
+Run    [ 100% ] setup()
+race   [   0% ]
+
+Run    [ 100% ] setup()
+race   [   0% ]
+
+Run    [ 100% ] setup()
+race   [   0% ]
+
+Run    [ 100% ] setup()
+race   [   0% ]
+
+Run    [ 100% ] setup()
+race   [   0% ]
+
+Run    [ 100% ] setup()
+race   [   0% ]
+
+Run    [ 100% ] setup()
+race   [   0% ]
+
+Run    [ 100% ] setup()
+race   [   0% ]
+
+Run    [ 100% ] setup()
+race   [   0% ]
+
+Run    [ 100% ] setup()
+race   [   0% ]
+
+Run    [ 100% ] setup()
+race   [   0% ]
+
+Run    [ 100% ] setup()
+race   [   0% ]
+
+Run    [ 100% ] setup()
+race   [   0% ]
+
+Run    [ 100% ] setup()
+race   [   0% ]
+
+Run    [ 100% ] setup()
+race   [   0% ]
+
+Run    [ 100% ] setup()
+race   [   0% ]
+
+Run    [ 100% ] setup()
+race   [   0% ]
+
+Run    [ 100% ] setup()
+race   [   0% ]
+
+Run    [ 100% ] setup()
+race   [   0% ]
+
+Run    [ 100% ] setup()
+race   [   0% ]
+
+Run    [ 100% ] setup()
+race   [   0% ]
+
+Run    [ 100% ] setup()
+race   [   0% ]
+
+Run    [ 100% ] setup()
+race   [   0% ]
+
+Run    [ 100% ] setup()
+race   [   0% ]
+
+Run    [ 100% ] setup()
+race   [   0% ]
+
+Run    [ 100% ] setup()
+race   [   0% ]
+
+Run    [ 100% ] setup()
+race   [   0% ]
+
+Run    [ 100% ] setup()
+race   [   0% ]
+
+running (2m08.0s), 04/20 VUs, 16 complete and 0 interrupted iterations
+race   [  80% ] 20 VUs  0m00.9s/2m0s  16/20 iters, 1 per VU
+
 
   █ TOTAL RESULTS 
 
-    checks_total.......: 20     2.75334/s
-    checks_succeeded...: 75.00% 15 out of 20
-    checks_failed......: 25.00% 5 out of 20
+    checks_total.......: 20      0.156/s
+    checks_succeeded...: 100.00% 20 out of 20
+    checks_failed......: 0.00%   0 out of 20
 
-    ✗ created
-      ↳  75% — ✓ 15 / ✗ 5
+    ✓ created or expected conflict
 
     CUSTOM
-    idempotent_replay_same_id......: 15     2.065005/s
-    invest_created.................: 15     2.065005/s
+    idempotent_replay_same_id......: 18     0.1404/s
+    invest_created.................: 18     0.1404/s
 
     HTTP
-    http_req_duration..............: avg=50.95ms  min=3.78ms med=11.74ms  max=212.55ms p(90)=108.29ms p(95)=111.75ms
-      { expected_response:true }...: avg=54.96ms  min=3.92ms med=37.35ms  max=119.01ms p(90)=108.07ms p(95)=110.11ms
-    http_req_failed................: 16.48% 30 out of 182
-    http_reqs......................: 182    25.05539/s
+    http_req_duration..............: avg=64.74ms  min=570µs  med=11.67ms max=1.05s p(90)=105.9ms p(95)=116.7ms 
+      { expected_response:true }...: avg=59.8ms   min=3.83ms med=11.88ms max=1.05s p(90)=105.9ms p(95)=116.38ms
+    http_req_failed................: 9.95%  20 out of 201
+    http_reqs......................: 201    1.567797/s
 
     EXECUTION
-    iteration_duration.............: avg=113.59ms min=63.4ms med=107.92ms max=222.34ms p(90)=142.45ms p(95)=221.26ms
-    iterations.....................: 20     2.75334/s
-    vus............................: 0      min=0         max=0 
+    iteration_duration.............: avg=296.69ms min=47.1ms med=93.8ms  max=1.06s p(90)=1.05s   p(95)=1.06s   
+    iterations.....................: 20     0.156/s
+    vus............................: 4      min=0         max=4 
     vus_max........................: 20     min=20        max=20
 
     NETWORK
-    data_received..................: 92 kB  13 kB/s
-    data_sent......................: 176 kB 24 kB/s
+    data_received..................: 105 kB 815 B/s
+    data_sent......................: 192 kB 1.5 kB/s
 
 
 
 
-running (0m07.3s), 00/20 VUs, 20 complete and 0 interrupted iterations
-race ✓ [ 100% ] 20 VUs  0m00.2s/2m0s  20/20 iters, 1 per VU
+running (2m08.2s), 00/20 VUs, 20 complete and 0 interrupted iterations
+race ✓ [ 100% ] 20 VUs  0m01.1s/2m0s  20/20 iters, 1 per VU

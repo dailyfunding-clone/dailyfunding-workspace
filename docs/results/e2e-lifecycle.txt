@@ -1,24 +1,25 @@
-[01] PASS signup 201 {"user_id":317,"email":"e2e-40c0da41@test.com","next_step":"identity_verification"}
-[02] PASS login e2e-40c0da41@test.com 200
-[03] PASS identity verify {"ci":"mock-ci-7217f08a6724dedfd251ac9602a42dc776595cfe9afeddb6","verified":true}
-[04] PASS suitability pass {"passed":true,"expires_at":"2027-10-10T10:59:36.170761Z"}
+[01] PASS signup 201 {"user_id":430,"email":"e2e-631cbced@test.com","next_step":"identity_verification"}
+[02] PASS login e2e-631cbced@test.com 200
+[03] PASS identity verify {"ci":"mock-ci-b68aafc37674423f8d01e614e701de239e2d410bfa1d4353","verified":true}
+[04] PASS suitability pass {"passed":true,"expires_at":"2027-10-10T12:29:28.004305Z"}
 [05] PASS reauth 200
 [06] PASS linked account 200 {"linked":true,"bank_name":"국민은행","account_no":"12345678901234","holder":"이이투이"}
-[07] PASS notify-intent 202 {"intent_id":"dep-1839ba5f89754a0d88e1aa52","status":"pending"}
-[08] PASS deposit webhook {"event_id":"evt-510143aef82c4672865033e6","delivered":true,"status_code":200}
+[07] PASS notify-intent 202 {"intent_id":"dep-f8fb442f1d604d63ab2137f9","status":"pending"}
+[08] PASS deposit webhook {"event_id":"evt-5573069bcee64adb8eab10c6","delivered":true,"status_code":200}
 [09] PASS deposit balance balance=1000000
 [10] PASS login admin@demo.local 200
-[11] PASS admin product create 201 {"id":63,"product_no":"2026-63","status":"draft"}
-[12] PASS product open {"id":63,"status":"recruiting"}
+[11] PASS admin product create 201 {"id":74,"product_no":"2026-74","status":"draft"}
+[12] PASS product open {"id":74,"status":"recruiting"}
 [13] PASS reauth for invest 200
-[14] PASS invest 201 {"investment_id":189,"amount":500000,"points_used":0,"expected_net_return":3525,"status":"active","schedule":[{"seq":1,"pay_date":"2026-10-25","princi
+[14] PASS invest 201 {"investment_id":268,"amount":500000,"points_used":0,"expected_net_return":3525,"status":"active","schedule":[{"seq":1,"pay_date":"2026-10-25","princi
 [15] PASS auto-recruited recruited
-[16] PASS execute loan 200 {"id":63,"status":"repaying"}
+[16] PASS execute loan 200 {"id":74,"status":"repaying"}
 [17] PASS schedule exists rows=1
      due_date=2026-10-25
-[18] PASS repay batch {"date":"2026-10-25","paid":34,"overdue":0}
+[18] PASS repay batch {"date":"2026-10-25","paid":1,"overdue":0}
 [19] PASS repaid balance balance=1003525
-[20] PASS withdraw request 202 {"withdrawal_id":"wd-aee67fa4e36140f084685056","fee":0,"status":"requested"}
-[21] PASS final balance balance=0
+[20] PASS withdraw request 202 {"withdrawal_id":"wd-83c33a0fd851405297de8c7c","fee":0,"status":"requested"}
+[21] PASS transfer execute {"event_id":"evt-a3da4011917c4bc5abd9e286","delivered":true,"status_code":200}
+[22] PASS final balance balance=0
 
-ALL PASS — lifecycle e2e (21 steps)
+ALL PASS — lifecycle e2e (22 steps)
