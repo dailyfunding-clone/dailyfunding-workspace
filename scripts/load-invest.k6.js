@@ -7,7 +7,7 @@
 // 실행: k6 run scripts/load-invest.k6.js
 //   -e API_BASE=http://localhost:8000 -e PRODUCT_ID=1 -e VUS=20 -e AMOUNT=100000
 import http from "k6/http";
-import { check, fail } from "k6";
+import { check, fail, sleep } from "k6";
 import { Counter } from "k6/metrics";
 import exec from "k6/execution";
 
@@ -29,8 +29,17 @@ const json = (cookie, csrf) => ({
   },
 });
 
+const post429 = (url, body, params, method = "POST") => {
+  for (let attempt = 0; attempt < 8; attempt++) {
+    const r = http.request(method, url, body, params);
+    if (r.status !== 429) return r;
+    sleep(Math.min(2 * (attempt + 1), 10));
+  }
+  return http.request(method, url, body, params);
+};
+
 const login = (email, password) => {
-  const r = http.post(`${API}/api/auth/login`, JSON.stringify({ email, password }), json());
+  const r = post429(`${API}/api/auth/login`, JSON.stringify({ email, password }), json());
   if (r.status !== 200) fail(`login ${email}: ${r.status}`);
   const parts = [];
   let csrf = "";
@@ -45,6 +54,7 @@ const login = (email, password) => {
 };
 
 export const options = {
+  setupTimeout: "10m",
   scenarios: {
     race: {
       executor: "per-vu-iterations",
@@ -55,18 +65,48 @@ export const options = {
   },
 };
 
+const ADMIN_EMAIL = __ENV.ADMIN_EMAIL || "admin@demo.local";
+const ADMIN_PASSWORD = __ENV.ADMIN_PASSWORD || "Admin1234!";
+
 export function setup() {
-  const productId = Number(__ENV.PRODUCT_ID);
+  let productId = Number(__ENV.PRODUCT_ID || 0);
+  if (!productId) {
+    const a = login(ADMIN_EMAIL, ADMIN_PASSWORD);
+    const create = post429(
+      `${API}/api/admin/products`,
+      JSON.stringify({
+        name: `k6 경합 ${Date.now()}`,
+        type: "scf",
+        annual_rate: "10.00",
+        term_months: 1,
+        target_amount: (VUS - 2) * AMOUNT,
+        repay_type: "bullet",
+        borrower_id: `k6-brw-${Date.now()}`,
+      }),
+      json(a.cookie, a.csrf)
+    );
+    if (create.status !== 201) fail(`admin product create: ${create.status} ${create.body}`);
+    productId = create.json("id");
+    const open = post429(
+      `${API}/api/admin/products/${productId}/status`,
+      JSON.stringify({ status: "recruiting" }),
+      { headers: { ...json(a.cookie, a.csrf).headers, "Idempotency-Key": uuidv4() } },
+      "PATCH"
+    );
+    if (open.status !== 200) fail(`product open: ${open.status} ${open.body}`);
+  }
   const product = http.get(`${API}/api/products/${productId}`);
   if (product.status !== 200) fail(`product fetch: ${product.status}`);
   const remaining = product.json("remaining_amount") ?? product.json("target_amount");
 
   const users = [];
+  const jar = http.cookieJar();
   for (let i = 0; i < VUS; i++) {
+    jar.clear(API);
     const email = `k6-${Date.now()}-${i}@test.com`;
     const password = "Test1234!";
     const name = `케이유저${i}`;
-    const signup = http.post(
+    const signup = post429(
       `${API}/api/auth/signup`,
       JSON.stringify({
         email,
@@ -81,20 +121,25 @@ export function setup() {
     if (signup.status !== 201) fail(`signup ${email}: ${signup.status} ${signup.body}`);
     const u = login(email, password);
     const auth = json(u.cookie, u.csrf);
-    const ident = http.post(
+    const ident = post429(
       `${API}/api/auth/identity/verify`,
-      JSON.stringify({ carrier: "SKT", name, birth: "19950101", phone: `010${String(10000000 + i)}` }),
+      JSON.stringify({
+        carrier: "SKT",
+        name,
+        birth: "19950101",
+        phone: `010${String(Math.floor(Math.random() * 1e8)).padStart(8, "0")}`,
+      }),
       auth
     );
     if (ident.status !== 200 || !ident.json("verified")) {
       fail(`identity ${email}: ${ident.status} ${ident.body}`);
     }
     const answers = [1, 2, 3, 4, 5, 6].map((s, k) => ({ seq: s, choice: "XOOXOO"[k] }));
-    const suit = http.post(`${API}/api/suitability-test`, JSON.stringify({ answers }), auth);
+    const suit = post429(`${API}/api/suitability-test`, JSON.stringify({ answers }), auth);
     if (suit.status !== 200 || !suit.json("passed")) {
       fail(`suitability ${email}: ${suit.status} ${suit.body}`);
     }
-    const intent = http.post(
+    const intent = post429(
       `${API}/api/deposit/notify-intent`,
       JSON.stringify({ sender_name: name, amount: AMOUNT * 2 }),
       { headers: { ...auth.headers, "Idempotency-Key": uuidv4() } }
@@ -102,13 +147,13 @@ export function setup() {
     if (![200, 201, 202].includes(intent.status)) {
       fail(`intent ${email}: ${intent.status} ${intent.body}`);
     }
-    const dep = http.post(
+    const dep = post429(
       `${API}/mockbank/deposits/execute`,
       JSON.stringify({ intent_id: intent.json("intent_id") }),
-      json()
+      json(u.cookie, u.csrf)
     );
     if (dep.status !== 200) fail(`deposit execute ${email}: ${dep.status} ${dep.body}`);
-    const reauth = http.post(`${API}/api/auth/reauth`, JSON.stringify({ password }), auth);
+    const reauth = post429(`${API}/api/auth/reauth`, JSON.stringify({ password }), auth);
     if (reauth.status !== 200 || !reauth.json("reauth_token")) {
       fail(`reauth ${email}: ${reauth.status} ${reauth.body}`);
     }

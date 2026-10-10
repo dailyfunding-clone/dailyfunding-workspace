@@ -11,6 +11,7 @@ N명이 remaining < N*amount 상품에 동시 투자:
 
 import os
 import sys
+import time
 import uuid
 from concurrent.futures import ThreadPoolExecutor
 
@@ -21,7 +22,7 @@ N = int(sys.argv[1]) if len(sys.argv) > 1 else 10
 AMOUNT = int(sys.argv[2]) if len(sys.argv) > 2 else 100_000
 
 
-def req(method, path, session=None, idem=None, reauth=None, **kw):
+def req(method, path, session=None, idem=None, reauth=None, _retries=0, **kw):
     headers = {"Content-Type": "application/json"}
     if session is not None and method.upper() not in ("GET", "HEAD", "OPTIONS"):
         csrf = session.cookies.get("csrf")
@@ -32,7 +33,11 @@ def req(method, path, session=None, idem=None, reauth=None, **kw):
     if reauth:
         headers["X-Reauth-Token"] = reauth
     s = session or requests
-    return s.request(method, f"{API}{path}", headers=headers, **kw)
+    r = s.request(method, f"{API}{path}", headers=headers, **kw)
+    if r.status_code == 429 and _retries < 8:
+        time.sleep(min(2.0 * (_retries + 1), 10.0))
+        return req(method, path, session, idem, reauth, _retries + 1, **kw)
+    return r
 
 
 def login(email, password):
