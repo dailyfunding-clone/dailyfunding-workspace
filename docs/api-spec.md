@@ -14,6 +14,7 @@
 |---|---|
 | Base URL | `{API}/api` |
 | 인증 | JWT access+refresh, httpOnly 쿠키. `access` 15분, `refresh` 14일. 갱신: `POST /api/auth/refresh` |
+| CSRF | 쿠키 인증 뮤테이션(POST/PUT/PATCH/DELETE)은 `csrf` 쿠키 값을 `X-CSRF-Token` 헤더로 echo (이중 쿠키 검증). 누락·불일치 시 403 `FORBIDDEN`. Authorization Bearer 요청은 대상 아님 |
 | 민감 액션 인증 | 비밀번호 재확인으로 발급되는 재확인 토큰(10분)을 `X-Reauth-Token` 헤더로 전달 |
 | 멱등성 | 부수효과 POST(투자·출금·포인트 전환·입금 알림)는 `Idempotency-Key` 헤더 필수. 누락 시 400 |
 | 금액 | 원 단위 정수. 수익률은 `%` 기준 소수점 2자리 문자열(`"9.80"`) |
@@ -108,12 +109,44 @@
 // 웹이 교환: POST /api/auth/app-code/exchange { "code": "482913" } → 쿠키 세션
 ```
 
+### POST /api/auth/business-number/verify — 사업자등록번호 인증(모의)
+```json
+// req { "business_number": "1234567890" } — 10자리 숫자
+// res { "verified": true } | { "verified": false, "reason": "unregistered" }
+```
+
+### POST /api/auth/find-id — 아이디(이메일) 찾기
+```json
+// req { "name": "홍길동", "birth_date": "19900101", "phone": "010..." }
+// res { "email": "a**@b.com" } — 본인인증 레코드 매칭 → 마스킹 이메일. 없으면 404
+```
+
+### POST /api/auth/password/reset-request — 비밀번호 재설정 링크 발송(모의)
+```json
+// req { "email": "a@b.com" }
+// res { "sent": true, "dev_token": "..." } — dev_token은 DEBUG 환경에서만 포함
+// 이메일 존재 여부는 응답으로 구분하지 않음. 토큰 유효 30분
+```
+
+### POST /api/auth/password/reset — 비밀번호 재설정
+```json
+// req { "token": "...", "new_password": "Abcd1234!" }
+// res { "reset": true } — 토큰 1회용. 성공 시 간편비밀번호 초기화(재등록 필요)
+```
+
+### GET /api/me — 내 정보
+```json
+{ "id": 42, "email": "a@b.com", "name": "홍길동", "role": "investor",
+  "grade": "general", "is_staff": false, "member_type": "individual",
+  "pin_registered": true, "identity_verified": true }
+```
+
 ---
 
 ## 3. 상품 (F-INV-01~03)
 
 ### GET /api/products — 상품 목록
-쿼리: `status` `type`(scf|stock_loan|mortgage|personal_credit) `min_rate` `max_rate` `min_term` `max_term` `min_amount` `max_amount` `sort`(rate_asc|rate_desc|latest) `include_closed`
+쿼리: `status` `type`(scf|stock_loan|mortgage|personal_credit) `min_rate` `max_rate` `min_term` `max_term` `min_amount` `max_amount` `sort`(rate_asc|rate_desc|latest) `include_closed` `ids`(콤마구분 상품 ID 목록, 최대 100개)
 ```json
 // res
 { "results": [{
@@ -135,6 +168,10 @@
   "my": { "deposit": 1500000, "investable": 3500000,   // 로그인 시만
           "grade_remaining_limit": 40000000, "same_borrower_remaining": 5000000 } }
 ```
+
+### GET /api/products/stream — 모집 진행률 실시간 스트림 (SSE)
+`text/event-stream`. 쿼리 `ids`(콤마구분, 생략 시 전체 공개 상품). 재개 시 `Last-Event-ID` 헤더로 커서 전달.
+PostgreSQL LISTEN/NOTIFY 기반. IP당 동시 스트림 수 제한 — 초과 시 429.
 
 ### GET /api/products/{id}/schedule-preview — 예상수익 계산
 ```
@@ -226,7 +263,12 @@
 쿼리: `from` `to` `kind`(deposit|withdraw|invest|repay|point|fee) `cursor`
 탭 데이터: `GET /api/deposit/history?view=withholding|platform_fee`
 
-### PUT /api/deposit/linked-account — 연결계좌 등록/변경(모의 본인명의 검증)
+### GET/PUT /api/deposit/linked-account — 연결계좌 조회·등록/변경
+```json
+// GET res — 미등록 시 { "linked": false }
+{ "linked": true, "bank_name": "국민은행", "account_no": "1234...", "holder": "홍길동", "auto_charge": false }
+// PUT: 모의 본인명의 검증 (예금주 ≠ 본인인증 이름이면 400). X-Reauth-Token 필요
+```
 
 ### PUT /api/deposit/auto-charge — 간편충전 ON/OFF `{ "enabled": true }`
 
@@ -329,10 +371,17 @@ API 쪽 수신 엔드포인트. 공통:
 | 메서드 | 경로 | 설명 |
 |---|---|---|
 | POST | `/api/devices` | `{ "expo_push_token": "...", "platform": "ios" }` 등록 |
-| POST | `/api/notifications/settings` | 신규 상품·마감·상환 알림 카테고리별 ON/OFF |
+| GET | `/api/notifications/settings` | 현재 알림 설정 조회 → `{ "enabled": bool }` |
+| POST | `/api/notifications/settings` | `{ "new_product"?, "recruit_closed"?, "repayment"? }` 카테고리별 ON/OFF → 변경 후 전체 설정 반환 |
 | GET | `/api/notifications` | 알림 내역 |
 
 발행 트리거: 상품 `recruiting` 전이, `recruited` 전이, `repay.daily` 배치 완료.
+
+### POST /api/metrics/vitals — Web Vitals 수집
+```json
+// req { "name": "LCP", "value": 1234.5, "path": "/products/512", "ts": 1759500000000 }
+// res 204 — 무인증, value/ts는 유한수만 허용
+```
 
 ---
 
@@ -343,6 +392,7 @@ API 쪽 수신 엔드포인트. 공통:
 | GET/POST/PATCH | `/api/admin/products` | 상품 CRUD, `PATCH .../status` 상태 전이 |
 | POST | `/api/admin/products/{id}/execute` | 모집완료 → 대출 실행(스케줄 확정·투자금 분개) |
 | POST | `/api/admin/batch/repay` `?date=` | 상환 배치 수동 트리거(데모 시간 제어) |
+| POST | `/api/admin/time/advance` | `{ "date": "YYYY-MM-DD" }` 데모 시간 진행 — repay/expire/reconcile 배치 즉시 실행 후 `{ "date", "repay", "expire", "reconcile" }` 요약 반환 |
 | POST | `/api/admin/batch/expire-points` `/reconcile` | 포인트 소멸 / 원장 대사 |
 | GET/PATCH | `/api/admin/grade-requests` | 등급 신청 심사 |
 | GET/PATCH | `/api/admin/deposit/holds` | 입금 보류 건 수동 매칭 |

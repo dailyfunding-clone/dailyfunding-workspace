@@ -85,7 +85,7 @@ FE/BE는 별도 저장소. 계약 동기화: BE CI가 `schema.json`을 생성해
 
 ### 3.1 모의 은행 (mockbank)
 
-- 같은 BE 저장소 내 별도 Django 앱 또는 경량 프로세스
+- 같은 Django 프로세스 내 별도 앱 (`mockbank`) — 인프로세스 웹훅 발행기
 - 역할: 가상계좌 입금 완료 웹훅 발행, 출금 이체 상태머신, 연결계좌 즉시 이체
 - 계약: `POST /api/webhooks/bank/deposit` HMAC-SHA256 서명 + `event_id`(멱등) + 재시도(지수 백오프)
 - API는 웹훅을 실제 외부 이벤트처럼 처리 → 연동 경계가 실제로 존재
@@ -112,7 +112,7 @@ WebhookEvent (수신 웹훅 로그, 멱등 키)
 
 | 영역 | 선택 |
 |---|---|
-| 로컬 개발 | Docker Compose (api + postgres + redis + mockbank + web) |
+| 로컬 개발 | Docker Compose (api + postgres + redis + worker + beat) — mockbank는 api 프로세스 내 앱 |
 | CI | GitHub Actions — 린트/테스트/타입검사/schema diff 검증 |
 | 배포 | AWS EC2(api+mockbank) · RDS Postgres · S3+CloudFront(web 정적) 또는 Vercel(web) |
 | 모니터링 | Sentry(웹/API), 구조화 로그(JSON) |

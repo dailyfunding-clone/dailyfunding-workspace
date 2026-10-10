@@ -8,7 +8,7 @@
 
 | 스크립트 | 내용 |
 |---|---|
-| `scripts/e2e-lifecycle.py` | 가입→인증→적합성→reauth→계좌→충전→투자→실행→상환→출금 20단계 |
+| `scripts/e2e-lifecycle.py` | 가입→인증→적합성→reauth→계좌→충전→투자→실행→상환→출금 22단계 |
 | `scripts/race-invest.py` | 투자 경합·멱등 — oversell 0, Idempotency-Key 재시도 일치 |
 | `scripts/load-invest.k6.js` | 동일 시나리오 k6 버전 (`k6 run -e PRODUCT_ID=<id>`) |
 
