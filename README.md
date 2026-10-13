@@ -2,17 +2,29 @@
 
 - `dailyfunding-fe/` — `apps/fo-web` Next.js 16 웹 + `apps/fo-native` Expo 모바일 + `apps/bo` 어드민 (pnpm + turbo)
 - `dailyfunding-be/` — Django/DRF API + mockbank + Celery
-- `docs/` — PRD, 기능/API 명세, 스택 정의
+- `docs/` — PRD, 기능/API 명세, 스택 정의, [개발 노트](docs/dev-notes/engineering-notes.md)
 
-## 검증 스크립트
+## 스크린샷
 
-| 스크립트 | 내용 |
+### fo-web
+
+| 홈 | 투자 상품 | 상품 상세 |
+|---|---|---|
+| ![fo-web 홈](https://github.com/dailyfunding-clone/dailyfunding-fe/raw/develop/docs/screenshots/fo-web/home.png) | ![fo-web 투자](https://github.com/dailyfunding-clone/dailyfunding-fe/raw/develop/docs/screenshots/fo-web/investment.png) | ![fo-web 상품 상세](https://github.com/dailyfunding-clone/dailyfunding-fe/raw/develop/docs/screenshots/fo-web/investment-detail.png) |
+
+### fo-native
+
+| 앱 랜딩 | 홈 탭 | 투자 탭 |
+|---|---|---|
+| ![네이티브 랜딩](https://github.com/dailyfunding-clone/dailyfunding-fe/raw/develop/docs/screenshots/fo-native/auth-landing.png) | ![네이티브 홈](https://github.com/dailyfunding-clone/dailyfunding-fe/raw/develop/docs/screenshots/fo-native/tab-home.png) | ![네이티브 투자](https://github.com/dailyfunding-clone/dailyfunding-fe/raw/develop/docs/screenshots/fo-native/tab-investment.png) |
+
+### bo
+
+| 상품 관리 | 배치 |
 |---|---|
-| `scripts/e2e-lifecycle.py` | 가입→인증→적합성→reauth→계좌→충전→투자→실행→상환→출금 22단계 |
-| `scripts/race-invest.py` | 투자 경합·멱등 — oversell 0, Idempotency-Key 재시도 일치 |
-| `scripts/load-invest.k6.js` | 동일 시나리오 k6 버전 (`k6 run -e PRODUCT_ID=<id>`) |
+| ![bo 상품](https://github.com/dailyfunding-clone/dailyfunding-fe/raw/develop/docs/screenshots/bo/products.png) | ![bo 배치](https://github.com/dailyfunding-clone/dailyfunding-fe/raw/develop/docs/screenshots/bo/batch.png) |
 
-전제: `dailyfunding-be` 컨테이너 기동 (`docker compose up`), 시드 적용.
+전체 스크린샷은 `dailyfunding-fe` 레포 `docs/screenshots/`에 있다.
 
 ## 모바일 푸시
 
